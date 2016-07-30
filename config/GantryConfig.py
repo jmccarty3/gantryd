@@ -116,6 +116,7 @@ class _Component(CFObject):
   defined_component_links = CFField('defineComponentLinks').list_of(_DefinedComponentLink).default([])
   required_component_links = CFField('requireComponentLinks').list_of(_RequiredComponentLink).default([])
   environment_variables = CFField('environmentVariables').list_of(_EnvironmentVariable).default([])
+  mem_limit = CFField('memoryLimit').default('0')
 
   connection_check = _HealthCheck().build({'kind': 'connection'})
   termination_checks = CFField('terminationChecks').list_of(_HealthCheck).default([connection_check])
@@ -167,7 +168,7 @@ class _Component(CFObject):
   def getComponentLinks(self):
     """ Returns a dict of aliases for component links required, with the values being the links' names. """
     return {l.alias: l.name for l in self.required_component_links}
-    
+
   def getEnvironmentVariables(self):
     """ Returns a dict of the defined environments variables and their values. """
     return {v.name: v.value for v in self.environment_variables}

@@ -316,7 +316,8 @@ class Component(object):
                                         host_config=client.create_host_config(
                                             binds=self.config.bindings,
                                             volumes_from=self.config.volumes_from,
-                                            privileged=self.config.privileged
+                                            privileged=self.config.privileged,
+                                            mem_limit=self.config.mem_limit
                                         ))
 
     return container
