@@ -3,11 +3,13 @@
 import argparse
 import signal
 import time
+import os
 
 from actions import start_action, update_action, list_action, stop_action, kill_action
 from config.GantryConfig import Configuration
 from runtime.manager import RuntimeManager
 from util import report, fail
+from filemonitor import FileMonitor
 
 
 ACTIONS = {
@@ -78,21 +80,25 @@ def run():
   component = manager.getComponent(component_name)
   if not component:
     raise Exception('Unknown component: ' + component_name)
-    
+
   # Apply the config overrides (if any).
   if config_overrides:
     component.applyConfigOverrides(config_overrides)
 
   # Run the action with the component and config.
   result = ACTIONS[action](component)
+  observer = FileMonitor(config_file, lambda: update_action(component))
   if result and should_monitor:
     try:
       report('Starting monitoring of component: ' + component_name)
       monitor(component)
+      observer.start()
     except KeyboardInterrupt:
       report('Terminating monitoring of component: ' + component_name)
 
   def cleanup_monitor(signum, frame):
+    observer.stop()
+    observer.join()
     manager.join()
 
   # Set the signal handler and a 5-second alarm
