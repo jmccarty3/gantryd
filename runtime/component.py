@@ -58,6 +58,17 @@ class Component(object):
 
     return None
 
+  def getPrimaryContainerImageId(self):
+    """ Returns the image id of the primary container for this component or None if none.
+    """
+
+    container = self.getPrimaryContainer()
+
+    if container is None:
+        return None
+    client = getDockerClient()
+    return client.inspect_container(container)['Image']
+
   def getImageId(self):
     """ Returns the docker ID of the image used for this component. Note that this
         will *not* return the *named* image, but rather the full UUID-like ID.

@@ -9,7 +9,6 @@ from actions import start_action, update_action, list_action, stop_action, kill_
 from config.GantryConfig import Configuration
 from runtime.manager import RuntimeManager
 from util import report, fail
-from filemonitor import FileMonitor
 
 
 ACTIONS = {
@@ -36,6 +35,14 @@ def loadConfig(config_file):
     print 'Error parsing gantry config: ' + str(e)
     return None
 
+def update_on_image(component):
+  running_image = component.getPrimaryContainerImageId()
+  latest_image = component.getImageId()
+
+  if running_image != latest_image:
+    report('Newer Image found for component ' + component.getName())
+    return ACTIONS['update'](component)
+  return True
 
 def monitor(component):
   while True:
@@ -49,6 +56,10 @@ def monitor(component):
       component.stop(kill=True)
       if not component.update():
         report('Could not restart component ' + component.getName())
+        return
+    report('Checking for latest image for component ' + component.getName())
+    if not update_on_image(component):
+        report('Failure updating on image update')
         return
 
 
@@ -87,18 +98,14 @@ def run():
 
   # Run the action with the component and config.
   result = ACTIONS[action](component)
-  observer = FileMonitor(config_file, lambda: update_action(component))
   if result and should_monitor:
     try:
       report('Starting monitoring of component: ' + component_name)
       monitor(component)
-      observer.start()
     except KeyboardInterrupt:
       report('Terminating monitoring of component: ' + component_name)
 
   def cleanup_monitor(signum, frame):
-    observer.stop()
-    observer.join()
     manager.join()
 
   # Set the signal handler and a 5-second alarm
